@@ -17,18 +17,21 @@ DESC="Nagios API Daemon"
 RETVAL=0
 LOGFILE="/var/log/nagios/nagios-api.log"
 
-NAG_API_BIN=/usr/bin/nagios-api
+NAG_API_BIN=/opt/10gen/nagios/nagios-api/nagios-api
 NAG_API_PORT=6315
-NAG_API_PID=/var/run/$PROG.pid
+NAG_API_PID=/var/run/nagios/$PROG.pid
+NAG_USER=nagios
 
-NAGIOS_STATUS_FILE=/var/log/nagios/status.dat
-NAGIOS_COMMAND_FILE=/var/spool/nagios/cmd/nagios.cmd
+NAGIOS_STATUS_FILE=/var/nagios/status.dat
+NAGIOS_COMMAND_FILE=/var/nagios/rw/nagios.cmd
 NAGIOS_LOG_FILE=/var/log/nagios/nagios.log
+
+NAG_CMD="$NAG_API_BIN -p $NAG_API_PORT -s $NAGIOS_STATUS_FILE -c $NAGIOS_COMMAND_FILE -l $NAGIOS_LOG_FILE"
 
 start() {
   echo -n "Starting $DESC ($PROG): "
-  daemon $NAG_API_BIN -p $NAG_API_PORT -s $NAGIOS_STATUS_FILE -c $NAGIOS_COMMAND_FILE -l $NAGIOS_LOG_FILE > $LOGFILE 2>&1 &
-  
+  daemon --user $NAG_USER --pidfile $NAG_API_PID "/usr/bin/scl enable python27 '/opt/10gen/nagios/virtualenv/bin/python $NAG_CMD'" > $LOGFILE 2>&1 &
+
   echo
   RETVAL=$?
   return $RETVAL
@@ -36,7 +39,7 @@ start() {
 
 stop() {
   echo -n "Shutting down $DESC ($PROG): "
-  killproc $PROG
+  killproc -p $NAG_API_PID $PROG TERM
 
   echo
   RETVAL=$?
@@ -50,13 +53,16 @@ case "$1" in
   stop)
 	stop
 	;;
+  status)
+  status -p $NAG_API_PID $PROG
+  ;;
   restart)
 	stop
 	start
 	RETVAL=$?
 	;;
   *)
-	echo $"Usage: $0 {start|stop|restart}"
+	echo $"Usage: $0 {start|stop|restart|status}"
 	RETVAL=1
 esac
 
