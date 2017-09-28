@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# this script is to create/delete downtime on nagios for a single host or a group of hosts
+# this script is to create/delete downtime on nagios for a single host
 # using nagios api https://github.com/zorkian/nagios-api
 
 
